@@ -447,11 +447,20 @@
         );
         z-index: -1;
       }
+      .stat-foot-tag {
+        height: 30px;
+        background: linear-gradient(135deg, #4e9aa6, #f6c1a9);
+        border-radius: 99px;
 
+        display: flex; /* flex to center text */
+        align-items: center; /* vertical center */
+        justify-content: center; /* horizontal center */
+        padding: 0 10px; /* optional horizontal padding */
+      }
       .stat-foot,
       .ngo-stat-foot {
         font-size: 14.5px;
-        color: var(--ink-mid);
+        color: var(--white);
         margin-top: 4px;
       }
       .stat-foot::before,
@@ -475,7 +484,8 @@
         font-weight: 600;
         color: var(--teal-mid);
         margin: 10px 0 6px;
-        text-align: left;
+        text-align: center;
+        transform: translateY(-16px);
       }
 
       /* Full Width Cards */
@@ -518,7 +528,7 @@
       .application-item {
         padding: 20px;
         border-radius: 16px;
-        border: 1px solid #eef2f6;
+        border: 1px solid var(--blush);
         margin-bottom: 15px;
         transition: 0.3s ease;
       }
@@ -608,6 +618,41 @@
           transform: translateY(0);
         }
       }
+      #loadMoreBtn {
+  display: block; /* will toggle with JS */
+  /* margin: 0 auto 0;  */
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: white;
+  background: linear-gradient(135deg, var(--teal-mid), var(--orange-mid));
+  border: none;
+  border-radius: 999px; /* pill shape */
+  box-shadow: 0 10px 25px rgba(78, 154, 166, 0.35);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+#loadMoreBtn::after {
+  content: "→";
+  display: inline-block;
+  margin-left: 10px;
+  transition: transform 0.25s ease;
+}
+#loadMoreBtn:hover::after {
+  transform: translateX(5px);
+}
+
+#loadMoreBtn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(78, 154, 166, 0.45);
+}
+
+#loadMoreBtn:active {
+  transform: scale(0.98);
+  box-shadow: 0 8px 20px rgba(78, 154, 166, 0.25);
+}
+
     </style>
   </head>
 
@@ -629,6 +674,7 @@
             </a>
             <a href="quiz.html"> <i data-lucide="sparkles"></i> Quiz </a>
             <a href="map.html"> <i data-lucide="map"></i> Map </a>
+            <a href="calendar.html"><i data-lucide="calendar"></i> Calendar</a>
           </nav>
         </div>
 
@@ -705,7 +751,9 @@
             </div>
 
             <div class="stat-number" id="totalTasks">0</div>
-            <p class="stat-foot">Completed volunteer activities</p>
+            <div class="stat-foot-tag">
+              <p class="stat-foot">Completed volunteer activities</p>
+            </div>
           </div>
 
           <div class="stat-card">
@@ -717,7 +765,9 @@
             </div>
 
             <div class="stat-number" id="totalCauses">0</div>
-            <p class="stat-foot">Areas you’ve contributed to</p>
+            <div class="stat-foot-tag">
+              <p class="stat-foot">Areas you’ve contributed to</p>
+            </div>
           </div>
 
           <div class="ngo-stat-card">
@@ -729,7 +779,9 @@
             </div>
 
             <div class="ngo-stat-number" id="totalNGOs">0</div>
-            <p class="ngo-stat-foot">Organizations you’ve worked with</p>
+            <div class="stat-foot-tag">
+              <p class="ngo-stat-foot">Organizations you’ve worked with</p>
+            </div>
           </div>
 
           <!-- Applications -->
@@ -742,6 +794,7 @@
             <div id="applicationsList">
               <p class="loading">Loading...</p>
             </div>
+            <button id="loadMoreBtn" style="display:none;">See More</button>
           </div>
 
           <!-- Skills -->
@@ -759,6 +812,10 @@
 
     <script type="module">
       /* ===== YOUR ORIGINAL JS (UNCHANGED) ===== */
+      let allApplications = []; // store all applications
+let visibleAppCount = 2;  // initial number to show
+const appIncrement = 5;   // load 5 more each click
+
 
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import {
@@ -881,34 +938,56 @@
         journeyText.innerHTML = message;
       }
 
-      function displayApplications(applications) {
-        const listContainer = document.getElementById("applicationsList");
+function displayApplications(applications) {
+  allApplications = applications; // store globally
+  visibleAppCount = 2;             // reset count
+  renderApplications();            // render initial chunk
 
-        if (applications.length === 0) {
-          listContainer.innerHTML =
-            '<p class="empty-state">No applications yet.</p>';
-          return;
-        }
+  // Show "See More" button if needed
+  const loadMoreBtn = document.getElementById("loadMoreBtn");
+  loadMoreBtn.addEventListener("click", () => {
+    visibleAppCount += appIncrement;
+    renderApplications();
+  });
+}
 
-        let html = '<div class="applications-list">';
+function renderApplications() {
+  const listContainer = document.getElementById("applicationsList");
+  const loadMoreBtn = document.getElementById("loadMoreBtn");
 
-        applications.forEach((app) => {
-          const date = new Date(app.appliedAt).toLocaleDateString();
-          html += `
-            <div class="application-item">
-                <div class="app-header">
-                    <h3>${app.opportunity.title}</h3>
-                    <span class="status-badge ${app.status}">${app.status}</span>
-                </div>
-                <p class="ngo-name">🏢 ${app.opportunity.ngoName}</p>
-                <p class="app-date">📅 Applied: ${date}</p>
-            </div>
-        `;
-        });
+  if (allApplications.length === 0) {
+    listContainer.innerHTML = '<p class="empty-state">No applications yet.</p>';
+    loadMoreBtn.style.display = "none";
+    return;
+  }
 
-        html += "</div>";
-        listContainer.innerHTML = html;
-      }
+  const appsToShow = allApplications.slice(0, visibleAppCount);
+
+  let html = '<div class="applications-list">';
+  appsToShow.forEach((app) => {
+    const date = new Date(app.appliedAt).toLocaleDateString();
+    html += `
+      <div class="application-item">
+          <div class="app-header">
+              <h3>${app.opportunity.title}</h3>
+              <span class="status-badge ${app.status}">${app.status}</span>
+          </div>
+          <p class="ngo-name">🏢 ${app.opportunity.ngoName}</p>
+          <p class="app-date">📅 Applied: ${date}</p>
+      </div>
+    `;
+  });
+  html += "</div>";
+  listContainer.innerHTML = html;
+
+  // Show/hide "See More" button
+  if (visibleAppCount >= allApplications.length) {
+    loadMoreBtn.style.display = "none";
+  } else {
+    loadMoreBtn.style.display = "block";
+  }
+}
+
 
       function displaySkills(skills, interests) {
         const container = document.getElementById("skillsOverview");
