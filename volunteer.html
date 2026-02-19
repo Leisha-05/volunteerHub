@@ -992,7 +992,7 @@ function displayOpportunities(opps) {
                 </div>
                 <div class="location">
                     <i data-lucide="map-pin"></i>
-                    ${opp.location}
+                    ${opp.location?.address || opp.location || 'Location not specified'}
                 </div>
                 <div class="card-footer-btn">${btn}</div>
             </div>
